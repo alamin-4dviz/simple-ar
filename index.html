@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GLB Viewer + AR + Animations + Fullscreen</title>
+  <title>GLB Viewer + AR</title>
 
   <!-- model-viewer library -->
   <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
@@ -12,21 +12,23 @@
     body {
       font-family: Arial, sans-serif;
       margin: 0;
-      padding: 20px;
       background: #f0f0f0;
       display: flex;
       flex-direction: column;
       align-items: center;
+      padding: 20px;
     }
 
-    h2 { margin-bottom: 10px; }
+    h2 {
+      margin-bottom: 10px;
+    }
 
     #uploadBox {
       background: white;
-      padding: 15px;
       border-radius: 8px;
-      margin-bottom: 15px;
+      padding: 20px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
     }
 
     model-viewer {
@@ -36,145 +38,68 @@
       border-radius: 10px;
     }
 
-    #controls {
-      margin-top: 15px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    button, select {
-      padding: 10px 15px;
-      font-size: 14px;
-      border-radius: 6px;
+    #arButton {
+      margin-top: 10px;
+      padding: 10px 20px;
       border: none;
-      cursor: pointer;
-    }
-
-    button {
       background: #007bff;
       color: white;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
     }
 
-    button:disabled {
+    #arButton:disabled {
       background: #777;
       cursor: not-allowed;
-    }
-
-    select {
-      background: white;
-      border: 1px solid #ccc;
     }
   </style>
 </head>
 <body>
 
-  <h2>3D GLB Viewer + AR + Animations + Fullscreen</h2>
+  <h2>3D GLB Viewer + AR</h2>
 
   <div id="uploadBox">
     <input type="file" id="fileInput" accept=".glb" />
   </div>
 
-  <!-- 3D MODEL VIEWER -->
   <model-viewer id="viewer"
     camera-controls
-    ar
     auto-rotate
-    shadow-intensity="1"
-    ar-modes="scene-viewer webxr quick-look">
+    ar
+    ar-modes="scene-viewer webxr quick-look"
+    exposure="1"
+    shadow-intensity="1">
   </model-viewer>
 
-  <!-- CONTROLS -->
-  <div id="controls">
-    <button id="arButton">View in AR</button>
-
-    <button id="playPauseBtn">Play</button>
-
-    <select id="animationSelect">
-      <option value="">No Animations</option>
-    </select>
-
-    <button id="fullscreenBtn">Fullscreen</button>
-  </div>
+  <button id="arButton">View in AR</button>
 
   <script>
-    const viewer = document.getElementById("viewer");
-    const fileInput = document.getElementById("fileInput");
-    const arButton = document.getElementById("arButton");
-    const playPauseBtn = document.getElementById("playPauseBtn");
-    const animSelect = document.getElementById("animationSelect");
-    const fullscreenBtn = document.getElementById("fullscreenBtn");
+    const fileInput = document.getElementById('fileInput');
+    const viewer = document.getElementById('viewer');
+    const arButton = document.getElementById('arButton');
 
-    let isPlaying = false;
-
-    // Load local GLB file
-    fileInput.addEventListener("change", () => {
-      const file = fileInput.files[0];
+    // Handle local GLB upload
+    fileInput.addEventListener('change', function () {
+      const file = this.files[0];
       if (!file) return;
 
       const url = URL.createObjectURL(file);
       viewer.src = url;
-
-      // Clear animations list
-      animSelect.innerHTML = '<option value="">Loading...</option>';
-
-      viewer.addEventListener("load", () => {
-        const animNames = viewer.availableAnimations || [];
-
-        animSelect.innerHTML = "";
-
-        if (animNames.length === 0) {
-          animSelect.innerHTML = '<option value="">No Animations</option>';
-        } else {
-          animNames.forEach(name => {
-            const op = document.createElement("option");
-            op.value = name;
-            op.textContent = name;
-            animSelect.appendChild(op);
-          });
-        }
-      });
     });
 
-    // AR Button
-    arButton.addEventListener("click", () => viewer.activateAR());
+    // AR button trigger
+    arButton.addEventListener('click', () => {
+      viewer.activateAR();
+    });
 
-    // Animation play/pause
-    playPauseBtn.addEventListener("click", () => {
-      if (!animSelect.value) {
-        alert("Select an animation first (if available).");
-        return;
-      }
-
-      isPlaying = !isPlaying;
-
-      if (isPlaying) {
-        viewer.animationName = animSelect.value;
-        viewer.play();
-        playPauseBtn.textContent = "Pause";
-      } else {
-        viewer.pause();
-        playPauseBtn.textContent = "Play";
+    // Disable AR button when AR is not supported
+    viewer.addEventListener('ar-status', (event) => {
+      if (event.detail.status === 'failed') {
+        alert("AR mode failed or is not supported on this device.");
       }
     });
 
-    // Change animation selection
-    animSelect.addEventListener("change", () => {
-      if (!animSelect.value) return;
-      viewer.animationName = animSelect.value;
-      viewer.play();
-      isPlaying = true;
-      playPauseBtn.textContent = "Pause";
-    });
-
-    // Fullscreen Mode
-    fullscreenBtn.addEventListener("click", () => {
-      if (viewer.requestFullscreen) viewer.requestFullscreen();
-      else if (viewer.webkitRequestFullscreen) viewer.webkitRequestFullscreen();
-    });
-
-    // Disable AR button if not supported
     document.addEventListener("DOMContentLoaded", () => {
       if (!document.createElement("model-viewer").canActivateAR) {
         arButton.disabled = true;
